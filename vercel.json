@@ -11,20 +11,6 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/upbit",
-      "dest": "/api/upbit.js"
-    },
-    {
-      "src": "/api/bithumb",
-      "dest": "/api/bithumb.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -52,3 +38,4 @@
     "NODE_ENV": "production"
   }
 }
+
