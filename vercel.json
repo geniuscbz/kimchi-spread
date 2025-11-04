@@ -11,24 +11,6 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/upbit",
-      "dest": "/api/upbit.js"
-    },
-    {
-      "src": "/api/binance",
-      "dest": "/api/binance.js"
-    },
-    {
-      "src": "/api/telegram",
-      "dest": "/api/telegram.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
