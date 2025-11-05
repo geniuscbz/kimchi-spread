@@ -1,67 +1,30 @@
-/**
- * Vercel Serverless Function - Binance API Proxy
- * Endpoint: /api/binance?symbol=BTCUSDT
- */
-
 export default async function handler(req, res) {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // CORS 설정
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-    // Handle OPTIONS request for CORS preflight
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+  const { symbol } = req.query;
+
+  if (!symbol) {
+    return res.status(400).json({ error: 'Symbol parameter required' });
+  }
+
+  try {
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+    
+    if (!response.ok) {
+      throw new Error(`Binance API error: ${response.status}`);
     }
 
-    // Only allow GET requests
-    if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    try {
-        const { symbol } = req.query;
-
-        if (!symbol) {
-            return res.status(400).json({
-                error: 'Bad Request',
-                message: 'Missing required parameter: symbol'
-            });
-        }
-
-        // Fetch from Binance API
-        const url = `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`;
-
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Binance API returned status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!data || !data.price) {
-            return res.status(404).json({
-                error: 'Not Found',
-                message: `Symbol ${symbol} not found on Binance`
-            });
-        }
-
-        // Return the ticker data
-        res.status(200).json(data);
-
-    } catch (error) {
-        console.error('Binance API error:', error);
-
-        res.status(500).json({
-            error: 'Internal Server Error',
-            message: error.message
-        });
-    }
+    const data = await response.json();
+    return res.status(200).json(data);
+    
+  } catch (error) {
+    console.error('Binance API Error:', error);
+    return res.status(500).json({ error: error.message });
+  }
 }
