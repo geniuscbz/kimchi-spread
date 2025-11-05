@@ -339,6 +339,34 @@
             };
         }
 
+
+        // Detect Cloudflare Pages deployment
+        if (hostname.includes('pages.dev') || hostname.includes('workers.dev')) {
+            return {
+                upbit: `${origin}/api/upbit`,
+                binance: `${origin}/api/binance`,
+                exchangeRate: `${origin}/api/exchange-rate`,
+                telegram: `${origin}/api/telegram`,
+                proxy: {
+                    upbit: `${origin}/api/upbit`,
+                    binance: `${origin}/api/binance`
+                }
+            };
+        }
+
+        // Detect Render deployment
+        if (hostname.includes('onrender.com')) {
+            return {
+                upbit: `${origin}/api/upbit`,
+                binance: `${origin}/api/binance`,
+                exchangeRate: `${origin}/api/exchange-rate`,
+                telegram: `${origin}/api/telegram`,
+                proxy: {
+                    upbit: `${origin}/api/upbit`,
+                    binance: `${origin}/api/binance`
+                }
+            };
+        }
         // Detect Netlify deployment
         if (hostname.includes('netlify.app') || hostname.includes('netlify.com')) {
             return {
