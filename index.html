@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌶️ 김치스프레드 - Upbit ↔ Binance Premium Tracker</title>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <style>
+        /* Custom animations and styles */
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .badge-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Chart container responsive */
+        .chart-container {
+            position: relative;
+            height: 60vh;
+            min-height: 400px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Telegram connect animation */
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.8); }
+        }
+
+        .telegram-glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 rounded-lg shadow-lg p-6 mb-6 text-white cursor-pointer hover:opacity-95 transition-opacity" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2 flex items-center gap-2">
+                        🌶️ 김치스프레드
+                    </h1>
+                    <p class="text-white text-sm opacity-90">
+                        Upbit ↔ Binance 실시간 프리미엄 추적기
+                    </p>
+                    <p class="text-xs text-white opacity-75 mt-1">
+                        KRW (Upbit) vs USDT (Binance) • 최근 60분 데이터
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm opacity-90 font-semibold">Real-time Premium Tracker</div>
+                    <div class="text-xs opacity-75">한국 프리미엄 모니터링</div>
+                    <div id="exchange-rate-badge" class="mt-2 bg-white bg-opacity-20 rounded px-3 py-1 text-xs">
+                        환율: ₩0 / $1
+                    </div>
+                    <div class="text-xs opacity-60 mt-1">
+                        환율 = BTC/KRW ÷ BTC/USDT
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Telegram Connection Panel -->
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-md p-4 mb-6 text-white">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+                    <span class="text-3xl">📱</span>
+                    <div>
+                        <div class="font-bold text-lg">텔레그램 알림 연동</div>
+                        <div class="text-xs text-blue-100">프리미엄 3% 이상 발생 시 즉시 알림!</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <input
+                        type="text"
+                        id="telegram-chat-id"
+                        placeholder="Chat ID 입력 (예: 123456789)"
+                        class="px-4 py-2 rounded-lg text-gray-800 focus:ring-2 focus:ring-white flex-1 md:w-64"
+                    />
+                    <button
+                        id="telegram-connect-btn"
+                        class="px-6 py-2 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
+                    >
+                        연결
+                    </button>
+                    <button
+                        id="telegram-disconnect-btn"
+                        class="px-6 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap hidden"
+                    >
+                        해제
+                    </button>
+                </div>
+            </div>
+            <div class="mt-3 text-xs text-blue-100 bg-blue-600 bg-opacity-30 rounded p-2 cursor-pointer hover:bg-opacity-40 transition-all" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+                💡 <strong>Chat ID 확인 방법:</strong>
+                <br>
+                1. 텔레그램에서 <a href="https://t.me/userinfobot" target="_blank" class="underline font-bold hover:text-white" onclick="event.stopPropagation()">@userinfobot</a> 검색
+                <br>
+                2. /start 입력하면 Chat ID가 표시됩니다
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+
+                <!-- Coin Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        💰 코인 선택
+                    </label>
+                    <select id="coin-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="BTC">Bitcoin (BTC)</option>
+                        <option value="ETH">Ethereum (ETH)</option>
+                        <option value="XRP">Ripple (XRP)</option>
+                        <option value="ADA">Cardano (ADA)</option>
+                        <option value="SOL">Solana (SOL)</option>
+                        <option value="DOGE">Dogecoin (DOGE)</option>
+                        <option value="MATIC">Polygon (MATIC)</option>
+                        <option value="AVAX">Avalanche (AVAX)</option>
+                        <option value="LINK">Chainlink (LINK)</option>
+                        <option value="DOT">Polkadot (DOT)</option>
+                        <option value="TRX">Tron (TRX)</option>
+                    </select>
+                </div>
+
+                <!-- Poll Interval -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        ⏱️ 업데이트 간격 (ms)
+                    </label>
+                    <input
+                        type="number"
+                        id="poll-interval"
+                        value="2000"
+                        min="500"
+                        max="60000"
+                        step="500"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Alert Threshold -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        🔔 알림 기준 (%)
+                    </label>
+                    <input
+                        type="number"
+                        id="alert-threshold"
+                        value="3.0"
+                        min="0.1"
+                        max="10"
+                        step="0.1"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Export Button -->
+                <div class="flex items-end">
+                    <button
+                        id="export-csv"
+                        class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium"
+                    >
+                        📥 CSV 내보내기
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toggles -->
+            <div class="flex flex-wrap gap-4">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="dual-lines" class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
+                    <span class="text-sm font-medium text-gray-700">양방향 라인 표시</span>
+                </label>
+
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="enable-alerts" checked class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
+                    <span class="text-sm font-medium text-gray-700">브라우저 알림 활성화</span>
+                </label>
+
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="use-proxy" class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
+                    <span class="text-sm font-medium text-gray-700">프록시 서버 사용 (CORS 우회)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Live Data Badges -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+
+            <!-- Upbit Price -->
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-4 text-white cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+                <div class="text-sm opacity-90 mb-1">🇰🇷 Upbit (KRW)</div>
+                <div id="upbit-price" class="text-2xl font-bold">₩0</div>
+            </div>
+
+            <!-- Binance Price (KRW) -->
+            <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-md p-4 text-white cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+                <div class="text-sm opacity-90 mb-1">🌍 Binance (원화환산)</div>
+                <div id="binance-price-krw" class="text-2xl font-bold">₩0</div>
+                <div id="binance-price-usd" class="text-xs opacity-75 mt-1">$0</div>
+            </div>
+
+            <!-- Premium % -->
+            <div id="premium-badge" class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg shadow-md p-4 text-white cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+                <div class="text-sm opacity-90 mb-1">🌶️ 김치 프리미엄</div>
+                <div id="premium-pct" class="text-2xl font-bold">0.00%</div>
+            </div>
+
+            <!-- Timestamp -->
+            <div class="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg shadow-md p-4 text-white cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+                <div class="text-sm opacity-90 mb-1">⏰ 마지막 업데이트</div>
+                <div id="last-update" class="text-lg font-bold">--:--:--</div>
+                <div class="text-xs opacity-75 mt-1">한국 시간 (KST)</div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow" onclick="window.open('https://link.coupang.com/a/c1l5Ae', '_blank')">
+            <div id="loading-skeleton" class="chart-container flex items-center justify-center">
+                <div class="text-center">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
+                    <p class="text-gray-600 font-semibold">데이터 로딩 중...</p>
+                    <p class="text-sm text-gray-500 mt-2">거래소에서 가격 정보를 가져오는 중입니다</p>
+                </div>
+            </div>
+            <div id="chart-wrapper" class="chart-container hidden">
+                <canvas id="premium-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <h3 class="font-semibold text-orange-900 mb-2">ℹ️ 김치 프리미엄이란?</h3>
+            <ul class="text-sm text-orange-800 space-y-1">
+                <li><strong>정의:</strong> 한국 거래소(Upbit)의 가격이 해외 거래소(Binance)보다 얼마나 높은지를 나타내는 지표</li>
+                <li><strong>계산식:</strong> ((Upbit 원화가격 - Binance 달러가격 × 환율) / (Binance 달러가격 × 환율)) × 100</li>
+                <li><strong>텔레그램 알림:</strong> 프리미엄이 3% 이상 발생하면 자동으로 알림 전송 (1분 간격)</li>
+                <li><strong>환율:</strong> 실시간 USD/KRW 환율 자동 적용 (10분마다 업데이트)</li>
+                <li><strong>활용:</strong> 프리미엄이 높을 때는 차익거래 기회, 낮을 때는 주의 필요</li>
+            </ul>
+        </div>
+
+        <!-- Coupang Partners Disclosure -->
+        <div class="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+            <p class="text-xs text-gray-600">
+                이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+            </p>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================================
+    // CONFIGURATION
+    // ============================================================================
+
+    /**
+     * Symbol mapping between exchanges
+     * Upbit uses KRW pairs, Binance uses USDT pairs
+     */
+    const SYMBOL_MAP = {
+        'BTC': { upbit: 'KRW-BTC', binance: 'BTCUSDT', name: 'Bitcoin' },
+        'ETH': { upbit: 'KRW-ETH', binance: 'ETHUSDT', name: 'Ethereum' },
+        'XRP': { upbit: 'KRW-XRP', binance: 'XRPUSDT', name: 'Ripple' },
+        'ADA': { upbit: 'KRW-ADA', binance: 'ADAUSDT', name: 'Cardano' },
+        'SOL': { upbit: 'KRW-SOL', binance: 'SOLUSDT', name: 'Solana' },
+        'DOGE': { upbit: 'KRW-DOGE', binance: 'DOGEUSDT', name: 'Dogecoin' },
+        'MATIC': { upbit: 'KRW-MATIC', binance: 'MATICUSDT', name: 'Polygon' },
+        'AVAX': { upbit: 'KRW-AVAX', binance: 'AVAXUSDT', name: 'Avalanche' },
+        'LINK': { upbit: 'KRW-LINK', binance: 'LINKUSDT', name: 'Chainlink' },
+        'DOT': { upbit: 'KRW-DOT', binance: 'DOTUSDT', name: 'Polkadot' },
+        'TRX': { upbit: 'KRW-TRX', binance: 'TRXUSDT', name: 'Tron' }
+    };
+
+    /**
+     * API endpoints
+     * Auto-detects deployment environment (Vercel, Netlify, localhost)
+     */
+    function getEndpoints() {
+        const hostname = window.location.hostname;
+        const origin = window.location.origin;
+
+        // Detect Vercel deployment
+        if (hostname.includes('vercel.app')) {
+            return {
+                upbit: `${origin}/api/upbit`,
+                binance: `${origin}/api/binance`,
+                exchangeRate: `${origin}/api/exchange-rate`,
+                telegram: `${origin}/api/telegram`,
+                proxy: {
+                    upbit: `${origin}/api/upbit`,
+                    binance: `${origin}/api/binance`
+                }
+            };
+        }
+
+        // Detect Netlify deployment
+        if (hostname.includes('netlify.app') || hostname.includes('netlify.com')) {
+            return {
+                upbit: `${origin}/.netlify/functions/upbit`,
+                binance: `${origin}/.netlify/functions/binance`,
+                exchangeRate: `${origin}/.netlify/functions/exchange-rate`,
+                telegram: `${origin}/.netlify/functions/telegram`,
+                proxy: {
+                    upbit: `${origin}/.netlify/functions/upbit`,
+                    binance: `${origin}/.netlify/functions/binance`
+                }
+            };
+        }
+
+        // Localhost or custom domain
+        return {
+            upbit: 'https://api.upbit.com/v1/ticker',
+            binance: 'https://api.binance.com/api/v3/ticker/price',
+            exchangeRate: 'upbit-calculated',
+            telegram: 'http://localhost:3000/api/telegram',
+            proxy: {
+                upbit: 'http://localhost:3000/api/upbit',
+                binance: 'http://localhost:3000/api/binance'
+            }
+        };
+    }
+
+    const ENDPOINTS = getEndpoints();
+
+    /**
+     * Configuration options
+     */
+    const CONFIG = {
+        windowMinutes: 60,           // Rolling window in minutes
+        defaultPollInterval: 2000,   // Default poll interval in ms
+        maxRetries: 5,               // Max retry attempts on error
+        initialBackoff: 1000,        // Initial backoff delay in ms
+        alertDebounce: 60000,        // Alert debounce in ms (1 minute)
+        timezone: 'Asia/Seoul',      // KST timezone
+        defaultUsdKrwRate: 1300,     // Default USD/KRW exchange rate
+        telegramThreshold: 3.0       // Telegram alert threshold (3%)
+    };
+
+    // ============================================================================
+    // STATE MANAGEMENT
+    // ============================================================================
+
+    const state = {
+        currentCoin: 'BTC',
+        dataPoints: [],
+        chart: null,
+        pollInterval: null,
+        lastAlertTime: {},
+        lastTelegramAlert: {},
+        useProxy: false,
+        retryCount: 0,
+        isFirstLoad: true,
+        telegramChatId: null,
+        usdKrwRate: CONFIG.defaultUsdKrwRate
+    };
+
+    // Load Telegram chat ID from localStorage
+    if (localStorage.getItem('telegram_chat_id')) {
+        state.telegramChatId = localStorage.getItem('telegram_chat_id');
+    }
+
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+
+    function formatKRW(value) {
+        if (value == null || isNaN(value)) return '₩0';
+        return '₩' + Math.round(value).toLocaleString('ko-KR');
+    }
+
+    function formatUSD(value) {
+        if (value == null || isNaN(value)) return '$0';
+        return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatPercent(value) {
+        if (value == null || isNaN(value)) return '0.00%';
+        const sign = value >= 0 ? '+' : '';
+        return `${sign}${value.toFixed(2)}%`;
+    }
+
+    function formatTimestamp(date) {
+        return new Date(date).toLocaleTimeString('ko-KR', {
+            timeZone: CONFIG.timezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            warning: 'bg-yellow-500',
+            info: 'bg-blue-500'
+        };
+
+        toast.className = `toast ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 max-w-sm`;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button class="ml-4 text-white hover:text-gray-200" onclick="this.parentElement.remove()">✕</button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            toast.style.transition = 'all 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    // ============================================================================
+    // EXCHANGE RATE
+    // ============================================================================
+
+    async function fetchExchangeRate() {
+        try {
+            console.log('🔄 환율 업데이트 중... (Upbit BTC/KRW ÷ BTC/USDT)');
+
+            let krwRate = null;
+
+            // For Vercel/Netlify: use serverless function
+            if (ENDPOINTS.exchangeRate !== 'upbit-calculated') {
+                const response = await fetch(ENDPOINTS.exchangeRate);
+
+                if (!response.ok) {
+                    throw new Error('Exchange rate API error: ' + response.status);
+                }
+
+                const data = await response.json();
+
+                // Serverless function format: { rates: { KRW: 1234.56 } }
+                if (data.rates && data.rates.KRW) {
+                    krwRate = data.rates.KRW;
+                }
+            }
+            // For localhost: calculate directly from Upbit BTC prices
+            else {
+                const [btcKrwResponse, btcUsdtResponse] = await Promise.all([
+                    fetch('https://api.upbit.com/v1/ticker?markets=KRW-BTC'),
+                    fetch('https://api.upbit.com/v1/ticker?markets=USDT-BTC')
+                ]);
+
+                if (!btcKrwResponse.ok || !btcUsdtResponse.ok) {
+                    throw new Error('Upbit API error');
+                }
+
+                const btcKrwData = await btcKrwResponse.json();
+                const btcUsdtData = await btcUsdtResponse.json();
+
+                const btcKrwPrice = btcKrwData[0]?.trade_price;
+                const btcUsdtPrice = btcUsdtData[0]?.trade_price;
+
+                if (btcKrwPrice && btcUsdtPrice && btcKrwPrice > 0 && btcUsdtPrice > 0) {
+                    // Calculate: BTC/KRW ÷ BTC/USDT = USD/KRW
+                    krwRate = btcKrwPrice / btcUsdtPrice;
+                    console.log(`📊 BTC/KRW: ₩${btcKrwPrice.toLocaleString()}, BTC/USDT: $${btcUsdtPrice.toLocaleString()}`);
+                }
+            }
+
+            if (krwRate && krwRate > 0) {
+                state.usdKrwRate = krwRate;
+                console.log('✅ 환율: $1 = ₩' + state.usdKrwRate.toFixed(2));
+
+                const badge = document.getElementById('exchange-rate-badge');
+                if (badge) {
+                    badge.textContent = '환율: ₩' + Math.round(state.usdKrwRate).toLocaleString('ko-KR') + ' / $1';
+                }
+                return;
+            }
+
+            throw new Error('Invalid exchange rate data');
+
+        } catch (error) {
+            console.warn('⚠️ 환율 API 오류:', error.message);
+            state.usdKrwRate = CONFIG.defaultUsdKrwRate;
+
+            const badge = document.getElementById('exchange-rate-badge');
+            if (badge) {
+                badge.textContent = '환율: ₩' + Math.round(state.usdKrwRate).toLocaleString('ko-KR') + ' / $1 (기본값)';
+            }
+        }
+    }
+
+    // Fetch exchange rate on init and every 2 seconds
+    fetchExchangeRate();
+    setInterval(fetchExchangeRate, 2000);
+
+    // ============================================================================
+    // TELEGRAM FUNCTIONS
+    // ============================================================================
+
+    function connectTelegram() {
+        const chatId = document.getElementById('telegram-chat-id').value.trim();
+
+        if (!chatId || isNaN(chatId)) {
+            showToast('❌ 올바른 Chat ID를 입력하세요', 'error');
+            return;
+        }
+
+        state.telegramChatId = chatId;
+        localStorage.setItem('telegram_chat_id', chatId);
+
+        // Update UI
+        document.getElementById('telegram-chat-id').disabled = true;
+        document.getElementById('telegram-connect-btn').classList.add('hidden');
+        document.getElementById('telegram-disconnect-btn').classList.remove('hidden');
+
+        showToast('✅ 텔레그램 연결 완료!', 'success');
+
+        // Send test message
+        sendTelegramMessage(`🌶️ 김치스프레드 알림 서비스 연결 완료!\n\n프리미엄이 3% 이상 발생하면 알림을 보내드립니다.`);
+    }
+
+    function disconnectTelegram() {
+        state.telegramChatId = null;
+        localStorage.removeItem('telegram_chat_id');
+
+        document.getElementById('telegram-chat-id').value = '';
+        document.getElementById('telegram-chat-id').disabled = false;
+        document.getElementById('telegram-connect-btn').classList.remove('hidden');
+        document.getElementById('telegram-disconnect-btn').classList.add('hidden');
+
+        showToast('텔레그램 연결이 해제되었습니다', 'info');
+    }
+
+    async function sendTelegramMessage(message) {
+        if (!state.telegramChatId) return;
+
+        try {
+            const response = await fetch(ENDPOINTS.telegram, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: state.telegramChatId,
+                    message: message
+                })
+            });
+
+            if (response.ok) {
+                console.log('✅ 텔레그램 메시지 전송:', message);
+            }
+        } catch (error) {
+            console.error('❌ 텔레그램 메시지 전송 실패:', error);
+        }
+    }
+
+    // ============================================================================
+    // DATA FETCHING
+    // ============================================================================
+
+    async function fetchUpbitPrice(symbol, retries = 0) {
+        const symbols = SYMBOL_MAP[symbol];
+        if (!symbols) throw new Error(`Unknown symbol: ${symbol}`);
+
+        // Detect if using proxy endpoint (Vercel/Netlify serverless or localhost proxy)
+        const isProxy = ENDPOINTS.upbit.includes('/api/') || ENDPOINTS.upbit.includes('/.netlify/functions/');
+
+        const endpoint = isProxy
+            ? `${ENDPOINTS.upbit}?symbol=${symbols.upbit}`
+            : `${ENDPOINTS.upbit}?markets=${symbols.upbit}`;
+
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error(`Upbit API error: ${response.status}`);
+
+            const data = await response.json();
+            // Proxy returns single object, direct API returns array
+            const ticker = isProxy ? data : data[0];
+
+            if (!ticker || !ticker.trade_price) {
+                throw new Error('Invalid Upbit response');
+            }
+
+            return ticker.trade_price;
+
+        } catch (error) {
+            if (retries < CONFIG.maxRetries) {
+                const backoff = CONFIG.initialBackoff * Math.pow(2, retries);
+                await sleep(backoff);
+                return fetchUpbitPrice(symbol, retries + 1);
+            }
+            throw error;
+        }
+    }
+
+    async function fetchBinancePrice(symbol, retries = 0) {
+        const symbols = SYMBOL_MAP[symbol];
+        if (!symbols) throw new Error(`Unknown symbol: ${symbol}`);
+
+        // Detect if using proxy endpoint (Vercel/Netlify serverless or localhost proxy)
+        const isProxy = ENDPOINTS.binance.includes('/api/') || ENDPOINTS.binance.includes('/.netlify/functions/');
+
+        const endpoint = isProxy
+            ? `${ENDPOINTS.binance}?symbol=${symbols.binance}`
+            : `${ENDPOINTS.binance}?symbol=${symbols.binance}`;
+
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error(`Binance API error: ${response.status}`);
+
+            const data = await response.json();
+            const price = parseFloat(data.price);
+
+            if (!price || isNaN(price)) {
+                throw new Error('Invalid Binance response');
+            }
+
+            return price;
+
+        } catch (error) {
+            if (retries < CONFIG.maxRetries) {
+                const backoff = CONFIG.initialBackoff * Math.pow(2, retries);
+                await sleep(backoff);
+                return fetchBinancePrice(symbol, retries + 1);
+            }
+            throw error;
+        }
+    }
+
+    async function fetchPricesAndCompute(symbol) {
+        try {
+            const [upbitPrice, binancePriceUSD] = await Promise.all([
+                fetchUpbitPrice(symbol),
+                fetchBinancePrice(symbol)
+            ]);
+
+            if (!upbitPrice || !binancePriceUSD || upbitPrice <= 0 || binancePriceUSD <= 0) {
+                console.error('Invalid prices:', { upbitPrice, binancePriceUSD });
+                return null;
+            }
+
+            // Convert Binance USD price to KRW
+            const binancePriceKRW = binancePriceUSD * state.usdKrwRate;
+
+            // Calculate premium (Upbit vs Binance in KRW)
+            const premiumPct = ((upbitPrice - binancePriceKRW) / binancePriceKRW) * 100;
+
+            // Reverse for dual-line mode
+            const binancePct = ((binancePriceKRW - upbitPrice) / upbitPrice) * 100;
+
+            return {
+                ts: new Date(),
+                upbitPrice,
+                binancePriceUSD,
+                binancePriceKRW,
+                premiumPct,
+                binancePct
+            };
+
+        } catch (error) {
+            console.error('Error fetching prices:', error);
+
+            if (error.message.includes('Failed to fetch')) {
+                if (!state.useProxy) {
+                    showToast('⚠️ CORS 오류. 프록시 모드를 활성화하세요.', 'warning');
+                }
+            } else {
+                showToast(`❌ 오류: ${error.message}`, 'error');
+            }
+
+            return null;
+        }
+    }
+
+    // ============================================================================
+    // DATA MANAGEMENT
+    // ============================================================================
+
+    function addDataPoint(point) {
+        if (!point) return;
+
+        state.dataPoints.push(point);
+
+        const cutoffTime = new Date(Date.now() - CONFIG.windowMinutes * 60 * 1000);
+        state.dataPoints = state.dataPoints.filter(p => p.ts > cutoffTime);
+
+        updateBadges(point);
+        updateChart();
+        checkAlerts(point);
+    }
+
+    function clearData() {
+        state.dataPoints = [];
+        state.isFirstLoad = true;
+        updateChart();
+    }
+
+    // ============================================================================
+    // UI UPDATES
+    // ============================================================================
+
+    function updateBadges(point) {
+        document.getElementById('upbit-price').textContent = formatKRW(point.upbitPrice);
+        document.getElementById('binance-price-krw').textContent = formatKRW(point.binancePriceKRW);
+        document.getElementById('binance-price-usd').textContent = formatUSD(point.binancePriceUSD);
+
+        const premiumEl = document.getElementById('premium-pct');
+        const badgeEl = document.getElementById('premium-badge');
+
+        premiumEl.textContent = formatPercent(point.premiumPct);
+
+        // Color based on premium
+        if (point.premiumPct > 0) {
+            badgeEl.className = badgeEl.className.replace(/from-\w+-\d+ to-\w+-\d+/, 'from-green-500 to-green-600');
+        } else if (point.premiumPct < 0) {
+            badgeEl.className = badgeEl.className.replace(/from-\w+-\d+ to-\w+-\d+/, 'from-red-500 to-red-600');
+        } else {
+            badgeEl.className = badgeEl.className.replace(/from-\w+-\d+ to-\w+-\d+/, 'from-gray-500 to-gray-600');
+        }
+
+        document.getElementById('last-update').textContent = formatTimestamp(point.ts);
+    }
+
+    function initChart() {
+        const ctx = document.getElementById('premium-chart').getContext('2d');
+
+        state.chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: '김치 프리미엄 (%)',
+                    data: [],
+                    borderColor: 'rgb(249, 115, 22)',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 2,
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                            },
+                            title: function(context) {
+                                return formatTimestamp(context[0].parsed.x);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'minute',
+                            displayFormats: {
+                                minute: 'HH:mm'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '시간 (KST)'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '프리미엄 (%)'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateChart() {
+        if (!state.chart) return;
+
+        const isDualMode = document.getElementById('dual-lines').checked;
+
+        if (isDualMode) {
+            state.chart.data.datasets = [
+                {
+                    label: 'Upbit 프리미엄 (%)',
+                    data: state.dataPoints.map(p => ({ x: p.ts, y: p.premiumPct })),
+                    borderColor: 'rgb(249, 115, 22)',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 2,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Binance 프리미엄 (%)',
+                    data: state.dataPoints.map(p => ({ x: p.ts, y: p.binancePct })),
+                    borderColor: 'rgb(234, 179, 8)',
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 2,
+                    tension: 0.4,
+                    fill: false
+                }
+            ];
+        } else {
+            state.chart.data.datasets = [{
+                label: '김치 프리미엄 (%)',
+                data: state.dataPoints.map(p => ({ x: p.ts, y: p.premiumPct })),
+                borderColor: 'rgb(249, 115, 22)',
+                backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                borderWidth: 3,
+                pointRadius: 2,
+                tension: 0.4,
+                fill: false
+            }];
+        }
+
+        // Auto-scale Y-axis
+        if (state.dataPoints.length > 0) {
+            const allValues = isDualMode
+                ? state.dataPoints.flatMap(p => [p.premiumPct, p.binancePct])
+                : state.dataPoints.map(p => p.premiumPct);
+
+            const minVal = Math.min(...allValues);
+            const maxVal = Math.max(...allValues);
+            const padding = Math.max(0.5, (maxVal - minVal) * 0.1);
+
+            state.chart.options.scales.y.min = minVal - padding;
+            state.chart.options.scales.y.max = maxVal + padding;
+        }
+
+        state.chart.update('none');
+
+        if (state.isFirstLoad && state.dataPoints.length > 0) {
+            document.getElementById('loading-skeleton').classList.add('hidden');
+            document.getElementById('chart-wrapper').classList.remove('hidden');
+            state.isFirstLoad = false;
+        }
+    }
+
+    // ============================================================================
+    // ALERTS
+    // ============================================================================
+
+    function checkAlerts(point) {
+        if (!document.getElementById('enable-alerts').checked) return;
+
+        const threshold = parseFloat(document.getElementById('alert-threshold').value);
+        const absPremium = Math.abs(point.premiumPct);
+
+        if (absPremium >= threshold) {
+            const now = Date.now();
+
+            // Browser alert
+            const lastAlert = state.lastAlertTime[state.currentCoin] || 0;
+            if (now - lastAlert >= CONFIG.alertDebounce) {
+                const direction = point.premiumPct > 0 ? '높습니다' : '낮습니다';
+                showToast(
+                    `🚨 ${state.currentCoin}: Upbit이 Binance보다 ${formatPercent(point.premiumPct)} ${direction}!`,
+                    'warning'
+                );
+                state.lastAlertTime[state.currentCoin] = now;
+            }
+
+            // Telegram alert (3% or higher)
+            if (absPremium >= CONFIG.telegramThreshold && state.telegramChatId) {
+                const lastTelegramAlert = state.lastTelegramAlert[state.currentCoin] || 0;
+
+                if (now - lastTelegramAlert >= CONFIG.alertDebounce) {
+                    const emoji = point.premiumPct > 0 ? '🔥' : '❄️';
+                    const direction = point.premiumPct > 0 ? '높습니다' : '낮습니다';
+
+                    const message =
+                        `${emoji} 김치 프리미엄 알림!\n\n` +
+                        `코인: ${SYMBOL_MAP[state.currentCoin].name} (${state.currentCoin})\n` +
+                        `프리미엄: ${formatPercent(point.premiumPct)}\n\n` +
+                        `🇰🇷 Upbit: ${formatKRW(point.upbitPrice)}\n` +
+                        `🌍 Binance: ${formatKRW(point.binancePriceKRW)}\n` +
+                        `   (${formatUSD(point.binancePriceUSD)} × ₩${Math.round(state.usdKrwRate)})\n\n` +
+                        `Upbit이 Binance보다 ${direction}`;
+
+                    sendTelegramMessage(message);
+                    state.lastTelegramAlert[state.currentCoin] = now;
+                }
+            }
+        }
+    }
+
+    // ============================================================================
+    // CSV EXPORT
+    // ============================================================================
+
+    function exportCSV() {
+        if (state.dataPoints.length === 0) {
+            showToast('내보낼 데이터가 없습니다', 'warning');
+            return;
+        }
+
+        let csv = '시간(KST),Upbit(KRW),Binance(USD),Binance(KRW),프리미엄(%)\n';
+
+        state.dataPoints.forEach(point => {
+            const timestamp = new Date(point.ts).toLocaleString('ko-KR', { timeZone: CONFIG.timezone });
+            csv += `${timestamp},${point.upbitPrice},${point.binancePriceUSD.toFixed(2)},${point.binancePriceKRW.toFixed(2)},${point.premiumPct.toFixed(2)}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', `kimchi_spread_${state.currentCoin}_${Date.now()}.csv`);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast('✅ CSV 파일 다운로드 완료', 'success');
+    }
+
+    // ============================================================================
+    // POLLING
+    // ============================================================================
+
+    async function poll() {
+        const point = await fetchPricesAndCompute(state.currentCoin);
+        if (point) {
+            addDataPoint(point);
+        }
+    }
+
+    function startPolling() {
+        stopPolling();
+        const interval = parseInt(document.getElementById('poll-interval').value);
+        poll();
+        state.pollInterval = setInterval(poll, interval);
+        console.log(`✅ Polling started for ${state.currentCoin} every ${interval}ms`);
+    }
+
+    function stopPolling() {
+        if (state.pollInterval) {
+            clearInterval(state.pollInterval);
+            state.pollInterval = null;
+        }
+    }
+
+    // ============================================================================
+    // EVENT HANDLERS
+    // ============================================================================
+
+    function onCoinChange() {
+        const newCoin = document.getElementById('coin-select').value;
+        if (newCoin !== state.currentCoin) {
+            console.log(`Switching to ${newCoin}`);
+            state.currentCoin = newCoin;
+            clearData();
+            startPolling();
+        }
+    }
+
+    function onPollIntervalChange() {
+        const interval = parseInt(document.getElementById('poll-interval').value);
+        if (interval < 500 || interval > 60000) {
+            showToast('⚠️ 업데이트 간격은 500~60000ms 사이여야 합니다', 'warning');
+            return;
+        }
+        startPolling();
+    }
+
+    function onDualLinesToggle() {
+        updateChart();
+    }
+
+    function onProxyToggle() {
+        state.useProxy = document.getElementById('use-proxy').checked;
+        showToast(state.useProxy ? '🔄 프록시 모드 활성화' : '🔄 직접 연결 모드 활성화', 'info');
+        startPolling();
+    }
+
+    // ============================================================================
+    // INITIALIZATION
+    // ============================================================================
+
+    function init() {
+        console.log('🌶️ 김치스프레드 초기화 중...');
+
+        // Auto-detect deployment
+        const hostname = window.location.hostname;
+        const isDeployed = hostname.includes('vercel.app') ||
+                          hostname.includes('netlify.app') ||
+                          hostname.includes('netlify.com');
+
+        if (isDeployed) {
+            state.useProxy = true;
+            document.getElementById('use-proxy').checked = true;
+            const platform = hostname.includes('vercel') ? 'Vercel' : 'Netlify';
+            showToast(`🌐 ${platform}에서 실행 중`, 'success');
+        }
+
+        // Initialize Telegram UI
+        if (state.telegramChatId) {
+            document.getElementById('telegram-chat-id').value = state.telegramChatId;
+            document.getElementById('telegram-chat-id').disabled = true;
+            document.getElementById('telegram-connect-btn').classList.add('hidden');
+            document.getElementById('telegram-disconnect-btn').classList.remove('hidden');
+        }
+
+        // Initialize chart
+        initChart();
+
+        // Event listeners
+        document.getElementById('coin-select').addEventListener('change', onCoinChange);
+        document.getElementById('poll-interval').addEventListener('change', onPollIntervalChange);
+        document.getElementById('dual-lines').addEventListener('change', onDualLinesToggle);
+        document.getElementById('use-proxy').addEventListener('change', onProxyToggle);
+        document.getElementById('export-csv').addEventListener('click', exportCSV);
+        document.getElementById('telegram-connect-btn').addEventListener('click', connectTelegram);
+        document.getElementById('telegram-disconnect-btn').addEventListener('click', disconnectTelegram);
+
+        // Start polling
+        startPolling();
+
+        console.log('✅ 초기화 완료');
+    }
+
+    // Auto-start
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    </script>
+</body>
+</html>
+
+<!--
+================================================================================
+🌶️ 김치스프레드 (Kimchi Spread Tracker)
+================================================================================
+
+📖 개요
+-------
+한국 거래소 Upbit와 글로벌 거래소 Binance 간의 실시간 가격 차이(김치 프리미엄)를
+추적하는 웹 애플리케이션입니다.
+
+🚀 주요 기능
+------------
+✅ 실시간 가격 추적 (Upbit KRW vs Binance USDT)
+✅ 실시간 원/달러 환율 적용 (10분마다 자동 업데이트)
+✅ 프리미엄 3% 이상 시 텔레그램 자동 알림
+✅ 60분 롤링 차트
+✅ 11개 주요 코인 지원
+✅ CSV 데이터 내보내기
+✅ 반응형 디자인
+
+💰 지원 코인
+------------
+BTC, ETH, XRP, ADA, SOL, DOGE, MATIC, AVAX, LINK, DOT, TRX
+
+📱 텔레그램 연동
+----------------
+1. @userinfobot 에서 Chat ID 확인
+2. UI에 Chat ID 입력
+3. 연결 버튼 클릭
+4. 3% 이상 프리미엄 발생 시 자동 알림
+
+📊 김치 프리미엄 계산식
+-----------------------
+((Upbit KRW - Binance USD × 환율) / (Binance USD × 환율)) × 100
+
+================================================================================
+-->
