@@ -1,17 +1,4 @@
 {
-  "version": 2,
-  "name": "kimchi-spread",
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-
   "headers": [
     {
       "source": "/api/(.*)",
@@ -34,8 +21,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
