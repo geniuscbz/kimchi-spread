@@ -1,0 +1,30 @@
+name = "kimchi-spread"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Account details (get these from Cloudflare dashboard)
+# account_id = "your_account_id_here"
+
+# Workers configuration
+workers_dev = true
+
+# Routes (for custom domain)
+# [[routes]]
+# pattern = "kimchi-spread.com/*"
+# zone_name = "kimchi-spread.com"
+
+# Module format (ES modules)
+[build]
+command = ""
+
+[build.upload]
+format = "modules"
+
+# Text files to inline (for serving HTML)
+[[text_blobs]]
+binding = "indexHtml"
+path = "./index.html"
+
+# Environment variables
+# Set these in Cloudflare dashboard under Settings > Variables:
+# - TELEGRAM_BOT_TOKEN (optional, for telegram alerts)
