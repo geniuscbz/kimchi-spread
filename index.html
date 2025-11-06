@@ -95,7 +95,7 @@
                     <div class="text-sm opacity-90 font-semibold">Real-time Premium Tracker</div>
                     <div class="text-xs opacity-75">한국 프리미엄 모니터링</div>
                     <div id="exchange-rate-badge" class="mt-2 bg-white bg-opacity-20 rounded px-3 py-1 text-xs">
-                        환율: ₩0 / $1
+                        환율: ₩<span id="exchange-rate-badge">0</span> / $1
                     </div>
                     <div class="text-xs opacity-60 mt-1">
                         환율 = BTC/KRW ÷ BTC/USDT
@@ -504,10 +504,7 @@
                 state.usdKrwRate = krwRate;
                 console.log('✅ 환율: $1 = ₩' + state.usdKrwRate.toFixed(2));
 
-                const badge = document.getElementById('exchange-rate-badge');
-                if (badge) {
-                    badge.textContent = '환율: ₩' + Math.round(state.usdKrwRate).toLocaleString('ko-KR') + ' / $1';
-                }
+                updateFxBadge(state.usdKrwRate);
                 return;
             }
 
@@ -517,10 +514,7 @@
             console.warn('⚠️ 환율 API 오류:', error.message);
             state.usdKrwRate = CONFIG.defaultUsdKrwRate;
 
-            const badge = document.getElementById('exchange-rate-badge');
-            if (badge) {
-                badge.textContent = '환율: ₩' + Math.round(state.usdKrwRate).toLocaleString('ko-KR') + ' / $1 (기본값)';
-            }
+            updateFxBadge(state.usdKrwRate);
         }
     }
 
@@ -1082,6 +1076,15 @@
         init();
     }
     </script>
+
+    <script>
+    function updateFxBadge(rate) {
+      if (!Number.isFinite(rate) || rate <= 0) return;
+      const el = document.getElementById('exchange-rate-badge');
+      if (el) el.textContent = Math.round(rate).toLocaleString('ko-KR');
+    }
+    </script>
+    
 </body>
 </html>
 
