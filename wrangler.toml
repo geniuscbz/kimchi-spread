@@ -1,4 +1,4 @@
-name = "kimchi-spread-api"
+name = "kimchispread"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
