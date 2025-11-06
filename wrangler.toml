@@ -1,0 +1,74 @@
+name = "kimchi-spread-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# ============================================================================
+# Account Settings
+# ============================================================================
+# Get your account_id from Cloudflare Dashboard
+# Dashboard > Workers & Pages > Overview > Account ID
+# 
+# Uncomment and replace with your account ID:
+# account_id = "your_account_id_here"
+
+# ============================================================================
+# Workers Configuration
+# ============================================================================
+workers_dev = true
+
+# ============================================================================
+# Build Configuration
+# ============================================================================
+[build]
+command = ""
+
+[build.upload]
+format = "modules"
+
+# ============================================================================
+# Environment Variables (Secrets)
+# ============================================================================
+# Set these using wrangler CLI:
+# 
+# wrangler secret put TELEGRAM_BOT_TOKEN
+# 
+# Or in Cloudflare Dashboard:
+# Workers & Pages > Your Worker > Settings > Variables
+# 
+# Required secrets:
+# - TELEGRAM_BOT_TOKEN (optional, for Telegram alerts)
+
+# ============================================================================
+# Custom Domain Routes (Optional)
+# ============================================================================
+# Uncomment to use a custom domain:
+# 
+# [[routes]]
+# pattern = "api.your-domain.com/*"
+# zone_name = "your-domain.com"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# 
+# 이 Worker는 API 엔드포인트만 제공합니다.
+# HTML 프론트엔드는 Cloudflare Pages에 별도로 배포하세요.
+# 
+# 배포 방법:
+# 1. account_id 설정 (위 주석 참고)
+# 2. wrangler login
+# 3. wrangler deploy
+# 4. wrangler secret put TELEGRAM_BOT_TOKEN (선택사항)
+# 
+# API 엔드포인트:
+# - GET  /api/upbit?symbol=KRW-BTC
+# - GET  /api/binance?symbol=BTCUSDT
+# - GET  /api/exchange-rate
+# - POST /api/telegram
+# - GET  /health
+# 
+# HTML 배포는 다음 중 선택:
+# - Cloudflare Pages (권장)
+# - Vercel
+# - Netlify
+# - GitHub Pages
